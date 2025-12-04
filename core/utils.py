@@ -1,0 +1,3 @@
+
+SAFE_HTTP_METHODS = {'GET', 'HEAD', 'OPTIONS'}
+

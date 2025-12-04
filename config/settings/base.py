@@ -12,13 +12,15 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from dotenv import load_dotenv
 from pathlib import Path
-
-
+from datetime import timedelta
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv(BASE_DIR/'.env')
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -30,6 +32,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 
 # Application definition
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -38,18 +41,68 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
+
+    'rest_framework',
+    'rest_framework.authtoken',  
+    'rest_framework_simplejwt',  
+    'rest_framework_simplejwt.token_blacklist',
+
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+      
+    'corsheaders',
+
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+
+    'cloudinary',
+    'cloudinary_storage',
+
+    'mptt',
+
+    'apps.users',
+    'apps.products',
+    'apps.cart'
+
 ]
 
+SITE_ID = 1
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+
+]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_HEADERS = [
+    "content-type",
+    "x-client-type",
+    "x-csrftoken",
+    "authorization",
+
+]
+    
 ROOT_URLCONF = 'config.urls'
 
 TEMPLATES = [
@@ -77,12 +130,19 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DEB_USER"),
+        'USER': os.getenv("DB_USER"),
         'PASSWORD' : os.getenv("DB_PASSWORD"),
         'HOST' : os.getenv("DB_HOST","localhost"),
         'PORT' : os.getenv("DB_PORT","5432")
     }
 }
+
+
+AUTHENTICATION_BACKENDS = [
+    "core.authentication.EmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
 
 
 # Password validation
@@ -125,3 +185,99 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTH_USER_MODEL = 'users.CustomeUser'
+
+
+
+REST_USE_JWT = True
+
+REST_AUTH={
+    'USE_JWT':True,
+    'JWT_SERIALIZER':'apps.users.v1.serializers.CustomJwtSerializer',
+    
+}
+
+
+
+
+REST_FRAMEWORK = {
+
+    'DEFAULT_RENDERER_CLASSES': (
+            'rest_framework.renderers.JSONRenderer',
+        ),
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+            'core.authentication.HeaderOrCookieAuth',
+            'rest_framework.authentication.SessionAuthentication',
+        ),
+
+    'DEFAULT_FILTER_BACKENDS': [
+            'django_filters.rest_framework.DjangoFilterBackend',
+            'rest_framework.filters.SearchFilter',
+            'rest_framework.filters.OrderingFilter',
+        ]
+
+}
+
+
+
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10), 
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    
+    'ROTATE_REFRESH_TOKENS': True,                  
+    'BLACKLIST_AFTER_ROTATION': True,                
+    'AUTH_HEADER_TYPES': ('Bearer',),  
+    'TOKEN_OBTAIN_SERIALIZER' : 'apps.users.v1.serializers.CustomPayloadSerializer',
+}
+
+
+
+
+JWT_AUTH_COOKIE = 'access_token'
+JWT_AUTH_REFRESH_COOKIE = 'refresh_token'
+
+
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+DEFAULT_FROM_EMAIL ="mohdjasil2004@gmail.com"
+EMAIL_USE_TLS =True
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+
+
+ACCOUNT_ADAPTER = 'apps.users.adapter.CustomAccountAdapter'
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+
+        'SCOPE': [
+            'profile',      
+            'email',         
+        ],
+        
+        'AUTH_PARAMS': {
+            'access_type': 'online',         
+        },
+        
+        'VERIFIED_EMAIL': True,  
+        'KEY': '',               
+        'SECRET': '',            
+    }
+}
+
+GOOGLE_CLIENT_ID='572366985213-hvhecnc2ff5pqr585qcbek3obhdhe970.apps.googleusercontent.com'
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET")
+)
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv("CLOUDINARY_CLOUD_NAME"),
+    'API_KEY': os.getenv("CLOUDINARY_API_KEY"),
+    'API_SECRET': os.getenv("CLOUDINARY_API_SECRET"),
+}
+
