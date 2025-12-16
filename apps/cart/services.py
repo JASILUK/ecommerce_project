@@ -142,7 +142,7 @@ class AddToCartService:
 class ListCartService:
 
     @staticmethod
-    def get_redis_key(user, session_id):
+    def get_redis_key(user, session_id=None):
         if user.is_authenticated:
             return f"cart:user:{user.id}"
         return f"cart:guest:{session_id}"
@@ -151,7 +151,8 @@ class ListCartService:
     def read_from_redis(redis_key):
         all_cart_data = cart_redis.hgetall(redis_key)  
         data = {}
-
+        if not all_cart_data :
+            return False
         for key, value in all_cart_data.items():
             key = key.decode() if isinstance(key, bytes) else key
             value = value.decode() if isinstance(value, bytes) else value

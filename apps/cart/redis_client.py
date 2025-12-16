@@ -1,0 +1,2 @@
+from django_redis import get_redis_connection
+redis_clint = get_redis_connection("cart")

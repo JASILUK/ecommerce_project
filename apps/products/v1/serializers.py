@@ -11,7 +11,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class ColorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Color
-        fields = ['name','code']
+        fields = ['id','name','code']
 
 class SizeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,7 +23,7 @@ class ProductGeneralImageSerializer(serializers.ModelSerializer):
     genral_image = serializers.SerializerMethodField()
     class Meta:
         model = ProductGeneralImage
-        fields = ['image','genral_image']
+        fields = ['id','image','genral_image']
     def get_genral_image(self,obj):
         try:
             return obj.image.url
@@ -134,6 +134,45 @@ class PublicProductDetailSerializer(serializers.ModelSerializer):
 
 
 
+class SellerProductEditRetrieveSL(serializers.ModelSerializer):
+    category = serializers.PrimaryKeyRelatedField(read_only=True)
+    category_name = serializers.CharField(source="category.name", read_only=True)
+
+    class Meta:
+        model = Products
+        fields = [
+            "name",
+            "description",
+            "price",
+            "discount_percentage",
+            "is_active",
+            "category",
+            "category_name",
+        ]
+
+
+
+class SellerProductUpdateSL(serializers.ModelSerializer):
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.filter(is_active=True),
+        required=False
+    )
+    thumbnail = serializers.ImageField(required=False)
+
+    class Meta:
+        model = Products
+        fields = [
+            "name",
+            "description",
+            "price",
+            "discount_percentage",
+            "is_active",
+            "category",
+            "thumbnail",
+        ]
+
+
+
 class SellerProductListSerializer(serializers.ModelSerializer):
     thumbnail_url = serializers.SerializerMethodField()
     class Meta:
@@ -176,9 +215,12 @@ class SellerCreatProductSerializer(serializers.ModelSerializer):
             return str(obj.thumbnail)   
         
 class CreateUpdateProductColorSL(serializers.ModelSerializer):
+    color = serializers.PrimaryKeyRelatedField(
+        queryset=Color.objects.all()
+    )
     class Meta :
         model = ProductColor
-        fields = ['color']  
+        fields = ['color']   
 
 class createGeneralimagesSL(ProductGeneralImageSerializer):
     image = serializers.SerializerMethodField()

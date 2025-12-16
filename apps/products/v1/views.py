@@ -1,14 +1,15 @@
-from calendar import c
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework import generics
-from apps.products.models import Category, ProductColor, ProductColorImage, Products
+from apps.products.models import Category, Color, ProductColor, ProductColorImage, Products
 from apps.products.services import ColorProductService
-from apps.products.v1.serializers import CategoryAdminSerializer, CategorySerializer, ColorBasedVariantsListSerializer, ColorImagesListSL, CreateUpdateProductColorSL, ProductColorImageSerializer, ProductColorSerializer, PublicProductDetailSerializer, PublicProductListSerializer, SellerCreatProductSerializer, SellerProdctsDetailedSerializer, SellerProductListSerializer, createGeneralimagesSL, sellerColorBasedVariantsListSerializer
+from apps.products.v1.permissions import IsSellerOrReadOnly
+from apps.products.v1.serializers import CategoryAdminSerializer, CategorySerializer, ColorBasedVariantsListSerializer, ColorImagesListSL, ColorSerializer, CreateUpdateProductColorSL, ProductColorImageSerializer, ProductGeneralImageSerializer,  PublicProductDetailSerializer, PublicProductListSerializer, SellerCreatProductSerializer, SellerProdctsDetailedSerializer, SellerProductEditRetrieveSL, SellerProductListSerializer, SellerProductUpdateSL, createGeneralimagesSL, sellerColorBasedVariantsListSerializer
 from core.permissions import IsAdmin, IsSeller
 from rest_framework.filters import SearchFilter,OrderingFilter
 import cloudinary
+from rest_framework.decorators import action
 class PublicProductsView(viewsets.ReadOnlyModelViewSet):
     lookup_field = 'slug'
 
@@ -37,8 +38,9 @@ class PublicProductsView(viewsets.ReadOnlyModelViewSet):
     
 
 class SellerProductViewSet(viewsets.ModelViewSet):
-    lookup_field = 'slug'
+    lookup_field = "slug"
     permission_classes = [IsSeller]
+
     def get_queryset(self):
         return Products.objects.by_seller(self.request.user)
 
@@ -49,10 +51,18 @@ class SellerProductViewSet(viewsets.ModelViewSet):
         if self.action == "retrieve":
             return SellerProdctsDetailedSerializer
 
-        if self.action in ["create","update", "partial_update"]:
-            return SellerCreatProductSerializer
+        if self.action in  ["update" ,"create","partial_update"]:
+            return SellerProductUpdateSL   
 
         return SellerProductListSerializer
+
+    @action(detail=True, methods=["get"])
+    def edit(self, request, *args, **kwargs):
+        product = self.get_object()
+        serializer = SellerProductEditRetrieveSL(product)
+        return Response(serializer.data)
+
+
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -72,13 +82,27 @@ class SellerProductViewSet(viewsets.ModelViewSet):
 
 
 class ProductColorManageView(viewsets.ModelViewSet):
-    serializer_class = CreateUpdateProductColorSL
+    permission_classes = [IsSellerOrReadOnly]
+    def get_serializer_class(self):
+        if self.action =="list":
+          return ColorSerializer  
+        return CreateUpdateProductColorSL()
+    
+    def get_serializer(self, *args, **kwargs):
+        serilizer = self.get_serializer()
+        if self.action =='create':
+            kwargs['many'] =True 
+        return serilizer(*args,**kwargs)
+        
     def get_product(self):
+        
         return Products.objects.get(
             slug=self.kwargs["product_slug"],
             seller=self.request.user
         )
     def get_queryset(self):
+        if self.action == 'list':
+            return Color.objects.all()
         product = self.get_product()
         return product.product_colors.all()
   
@@ -86,14 +110,16 @@ class ProductColorManageView(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         product = self.get_product()
         serializer.save(product=product)
+ 
 
 
 class GenaralImageView(viewsets.ModelViewSet):
-    serializer_class = createGeneralimagesSL
+    permission_classes =[IsSeller]
+    serializer_class = ProductGeneralImageSerializer
     def get_product(self):
         return Products.objects.get(
-            pk = self.kwargs['product_slug'],
-            seller =self.request.user).get()
+            slug = self.kwargs['product_slug'],
+            seller =self.request.user)
         
     def get_queryset(self):
         product = self.get_product()

@@ -1,17 +1,21 @@
 from django.urls import include, path 
-from apps.users.v1.views import (AdminSellerApplicationView, CustomTokenObtain, GetMeView, ManualRegisterView, UserToSellerApplicationView,
+from apps.users.v1.views import (AddressViewAPI, AdminSellerApplicationView, CustomTokenObtain, GetMeView, ManualRegisterView, UserToSellerApplicationView,
                       customTokenVerify,
                       CustomTokenBlacklist,
                       CustomTokenRefresh)
 from apps.users.v1.views import ConfirmEmailApi,GoogleLoginView,ManualRegisterView
 from dj_rest_auth.registration.views import (ConfirmEmailView,ResendEmailVerificationView)
 from dj_rest_auth.views import (PasswordResetView,PasswordResetConfirmView)
+from rest_framework.routers import DefaultRouter
+router = DefaultRouter()
+router.register('address',AddressViewAPI,basename='address-api')
 urlpatterns = [
     path('login/',CustomTokenObtain.as_view(),name='token_obtain_api'),
     path('token/refresh/',CustomTokenRefresh.as_view(),name='token_refresh_api'),
     path('logout/',CustomTokenBlacklist.as_view(),name='token_blacklist_api'),
     path('token/varify/',customTokenVerify.as_view(),name='token_varify_api'),
     path('me/',GetMeView.as_view(),name='me_api'),
+    path('',include(router.urls)),
     path('auth/',include('dj_rest_auth.urls')),
 
     path('auth/registration/account-confirm-email/<path:key>/',ConfirmEmailApi.as_view(),name='account_confirm_email'),
@@ -28,4 +32,5 @@ urlpatterns = [
    path('admin/seller-application/',AdminSellerApplicationView.as_view(),name='admin-seller-application'),
    path('admin/seller-application/<int:pk>/',AdminSellerApplicationView.as_view(),name='admin-seller-application'),
    
+
 ]

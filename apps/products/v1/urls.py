@@ -18,6 +18,7 @@ product_router = routers.NestedDefaultRouter(router,'seller/products',lookup='pr
 
 variant_router.register('color/variants',ColorBasedVariantsView,basename='color-variants')
 product_router.register('color',ProductColorManageView,basename='product-color')
+
 product_router.register('general/images',GenaralImageView,basename='general-images')
 
 color_router  =  routers.NestedDefaultRouter(product_router,'color',lookup='color')

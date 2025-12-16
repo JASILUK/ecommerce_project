@@ -7,14 +7,14 @@ from rest_framework_simplejwt.views import (TokenObtainPairView,
                                             TokenRefreshView,
                                             TokenVerifyView,
                                             TokenBlacklistView)
-from apps.users.models import SellerProfileTable
+from apps.users.models import Address, SellerProfileTable
 from apps.users.services import  GoogleLogService, SetTokenCookie
 from rest_framework.views import APIView
 from allauth.account.models import EmailConfirmationHMAC,EmailConfirmation
 from allauth.account.models import EmailAddress
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from apps.users.v1.serializers import ManualRegisterSerializer, Meserailizer, SellerApplicationSerializer
+from apps.users.v1.serializers import AddressSerializer, ManualRegisterSerializer, Meserailizer, SellerApplicationSerializer
 from config import settings
 from config.settings.base import GOOGLE_CLIENT_ID
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -22,6 +22,7 @@ from django.contrib.auth import authenticate,get_user_model
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from allauth.account.models import EmailAddress,EmailConfirmationHMAC
 from django.core.mail import send_mail
+from rest_framework import viewsets
 
 from core.permissions import IsAdmin, IsBuyer, IsSeller
 
@@ -262,4 +263,13 @@ class AdminSellerApplicationView(APIView):
             user.role = user.Role.SELLER
             user.save()
         return response({'detail':f'Application {status}'},status =200)
+    
+
+class AddressViewAPI(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = AddressSerializer
+    def get_queryset(self):
+        return Address.objects.filter(user = self.request.user)
+    def perform_create(self, serializer):
+        return serializer.save(user = self.request.user)
     

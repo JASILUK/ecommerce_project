@@ -1,6 +1,7 @@
 import os
 from .base import *
 from dotenv import load_dotenv
+import stripe
 
 load_dotenv(BASE_DIR/'.env')
 
@@ -43,3 +44,9 @@ CACHES = {
     }
 }
 
+
+
+STRIPE_SECRET_KEY = os.getenv("STRIP_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIP_API_KEY")
+stripe.api_key = STRIPE_SECRET_KEY
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")

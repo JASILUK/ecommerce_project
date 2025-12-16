@@ -5,7 +5,7 @@ from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from django.contrib.auth import get_user_model
 
-from apps.users.models import SellerProfileTable
+from apps.users.models import Address, SellerProfileTable
 
 User = get_user_model()
 
@@ -120,3 +120,15 @@ class ManualRegisterSerializer(serializers.Serializer):
 
 
 
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = "__all__"
+        read_only_fields = ["user"]
+
+    def validate(self, attrs):
+        if attrs.get("is_default"):
+            user = self.context['request'].user
+            Address.objects.filter(user=user, is_default=True).update(is_default=False)
+        return attrs
+    

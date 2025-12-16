@@ -151,5 +151,3 @@ class ProductVariant(models.Model):
             self.sku = f"{self.product_color.product.id}-{self.product_color.color.name}-{uuid.uuid4().hex[:8]}"
         super().save(*args, **kwargs)
 
-
-
